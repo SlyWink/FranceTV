@@ -1,15 +1,22 @@
 #!/usr/bin/python3
 # coding: utf8
 
+import argparse
 import requests
 import sys
-import os
+#import os
 
 URL1 = 'http://pluzz.webservices.francetelevisions.fr/pluzz/liste/type/replay/nb/10000'
 URL2 = 'http://webservices.francetelevisions.fr/tools/getInfosOeuvre/v2/?idDiffusion={0}&catalogue=Pluzz'
 
-if len(sys.argv) != 2:
-  print('Syntaxe : {0} <émission à rechercher>'.format(os.path.basename(sys.argv[0])))
+parser = argparse.ArgumentParser(add_help=False)
+parser.add_argument('-q', type=int, nargs='?', choices=range(0,4), default=1, help='Qualité (0=basse à 3=haute)')
+parser.add_argument('keyword', nargs='?')
+
+opt = parser.parse_args()
+
+if opt.keyword is None:
+  parser.print_help()
 
 else:
 
@@ -17,7 +24,7 @@ else:
 
   liste = [] 
   for emission in js['reponse']['emissions']:
-    if emission['titre'].lower().find(sys.argv[1].lower()) != -1:
+    if emission['titre'].lower().find(opt.keyword.lower()) != -1:
       liste.append(emission)
 
   for cpt in range(len(liste)):
@@ -38,7 +45,7 @@ else:
           break
       liste_m3u8 = requests.get(url).text
       for m3u8 in liste_m3u8.splitlines():
-        if m3u8.find('index_3_av') != -1:
+        if m3u8.find('index_{0}_av'.format(opt.q)) != -1:
            segments = requests.get(m3u8).text
            nomfich = '{0}_{1}.mp4'.format(liste[indice-1]['code_programme'],liste[indice-1]['id_diffusion'])
            with open(nomfich, 'wb') as fd:
